@@ -1,0 +1,368 @@
+---
+title: "Survival Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This assignment focuses on conducting survival analysis on the Echocardiogram2 dataset using R. Survival analysis is a statistical method widely used in medical and biological research to analyze time-to-event data, such as the time until a patient experiences an event of interest or until the end of a study period. In this assignment, we aim to explore the dataset, preprocess the data, and perform survival analysis to answer specific questions related to the probability of survival over time for individuals in different treatment groups.
+
+
+## Objectives
+
+
+**Data Exploration and Preprocessing:** The assignment begins with loading the required R packages and exploring the Echocardiogram2 dataset. This involves examining the structure of the data, checking for missing values, and handling any preprocessing steps deemed necessary.
+
+**Correlation Analysis:** A correlation analysis is performed to understand the relationships between numeric variables in the dataset. The results are visualized using correlation matrices.
+
+**Survival Analysis Setup:** The dataset includes variables representing survival time and event status. The survival package in R is utilized to create a Surv object and analyze the data using Kaplan-Meier survival curves.
+
+**Stratified Kaplan-Meier Curves:** To further investigate the impact of different treatment groups on survival, Kaplan-Meier curves are generated with stratification by group. The strata are visualized, and overall survival curves are plotted.
+
+**Log-Rank Test:** The log-rank test, a common statistical test in survival analysis, is performed to assess the difference in survival curves between treatment groups. The results are presented along with visualizations of Kaplan-Meier curves incorporating log-rank test information.
+
+
+
+##### Load and Explore the Dataset(echocardiogram2)
+```{r}
+dataset_path <- "C:\\Zakir\\assignment\\echocardiogram2.csv"
+echocardiogram2_data <- read.csv(dataset_path)
+```
+
+
+
+
+##### Explore the data
+```{r}
+str(echocardiogram2_data)
+```
+
+##### Summary
+```{r}
+summary(echocardiogram2_data)
+```
+
+##### Select numeric columns
+```{r}
+numeric_columns <- sapply(echocardiogram2_data, is.numeric)
+```
+
+##### Check for missing values
+```{r}
+missing_values <- colSums(is.na(echocardiogram2_data))
+```
+
+##### Display missing values
+```{r}
+print("Missing Values:")
+print(missing_values)
+```
+
+##### Replace missing values with 0 (or any other appropriate method)
+```{r}
+echocardiogram2_data[is.na(echocardiogram2_data)] <- 0
+```
+
+##### Perform correlation analysis
+```{r}
+correlation_matrix <- cor(echocardiogram2_data[, numeric_columns, drop = FALSE])
+```
+
+
+##### Visualize the correlation matrix
+```{r}
+corrplot::corrplot(correlation_matrix)
+```
+##### Load the necessary packages
+
+```{r}
+library(knitr)
+```
+
+
+##### Use kable() to visualize the data
+
+```{r}
+kable(head(echocardiogram2_data))
+```
+
+
+## Question:
+#### "What is the probability of survival over time for individuals in different treatment groups in the echocardiogram2 dataset?"
+
+##### Our dataset have a variable named 'survival' representing the time to event
+##### and a variable named 'alive' representing the event status (1 for event, 0 for censored)
+
+
+
+
+## Calculate the Kaplan-Meier Estimator in R
+
+
+
+
+
+##### In this analysis, we will use the Kaplan-Meier estimator to assess the survival probability over time based on a given dataset. The survival analysis involves creating a Surv object, analyzing the data with the survfit() function, and generating a Kaplan-Meier curve using the ggsurvplot() function.
+
+
+##### Load the survival package
+```{r}
+library(survival)
+```
+
+##### 1.Create a Surv object using the Surv() function (Build a Surv Object)
+```{r}
+surv_object <- Surv(time = echocardiogram2_data$survival, event = echocardiogram2_data$alive)
+```
+
+##### Print the Surv object
+```{r}
+print(surv_object)
+```
+
+##### 2. Analyze the data with survfit() _  Analyze Data with survfit()
+```{r}
+survfit_object <- survfit(surv_object ~ 1)  # ~1 assumes a single group, adjust if needed
+```
+
+##### Display summary of the survfit object
+```{r}
+summary(survfit_object)
+```
+
+```{r}
+library(devtools)
+library(survival)
+library(tidyverse)
+library(survminer)
+```
+
+##### Ensure that 'surv_object' is correctly defined
+```{r}
+surv_object <- Surv(time = echocardiogram2_data$survival, event = echocardiogram2_data$alive)
+```
+
+##### 3.Generate a new Kaplan-Meier curve with stratification (Generate Kaplan-Meier Curve)
+```{r}
+ggsurvplot(survfit(surv_object ~ group, data = echocardiogram2_data), 
+           title = "Kaplan-Meier Survival Curve", 
+           xlab = "Time", ylab = "Survival Probability",
+           pval = TRUE, conf.int = TRUE, risk.table = TRUE,
+           xlim = c(0, 200), ylim = c(0, 1),
+           risk.table.title = "Number at Risk",
+           risk.table.col = "strata",
+           risk.table.fontsize = 4,
+           ggtheme = theme_minimal()
+)
+```
+
+
+## Visualize Survival Data
+
+
+
+##### Ensure 'surv_object' is correctly defined
+
+```{r}
+surv_object <- Surv(time = echocardiogram2_data$survival, event = echocardiogram2_data$alive)
+```
+
+##### Generate a new Kaplan-Meier curve with stratification
+
+```{r}
+survfit_object <- survfit(surv_object ~ group, data = echocardiogram2_data)
+```
+
+##### Load the necessary libraries
+
+```{r}
+library(survival)
+library(survminer)
+```
+
+##### Plot the strata using ggsurvplot()
+
+```{r}
+ggsurvplot(survfit_object, data = echocardiogram2_data,
+           title = "Kaplan-Meier Survival Curve (Stratified by Group)",
+           xlab = "Time", ylab = "Survival Probability",
+           pval = TRUE, conf.int = TRUE, risk.table = TRUE,
+           xlim = c(0, 200), ylim = c(0, 1),
+           risk.table.title = "Number at Risk",
+           risk.table.col = "strata",
+           risk.table.fontsize = 4,
+           ggtheme = theme_minimal()
+)
+```
+
+##### Plot the overall survival, stratified by 'group'
+
+```{r}
+ggsurvplot(survfit_object, data = echocardiogram2_data, 
+           title = "Kaplan-Meier Survival Curve (Overall)",
+           xlab = "Time", ylab = "Survival Probability",
+           pval = TRUE, conf.int = TRUE, risk.table = TRUE,
+           xlim = c(0, 200), ylim = c(0, 1),
+           risk.table.title = "Number at Risk",
+           risk.table.col = "strata",
+           risk.table.fontsize = 4,
+           ggtheme = theme_minimal()
+)
+
+
+```
+
+
+
+## Generate K-M Curves with the Predictor
+
+
+
+##### Ensure 'surv_object' is correctly defined
+
+```{r}
+surv_object <- Surv(time = echocardiogram2_data$survival, event = echocardiogram2_data$alive)
+```
+
+##### Generate a new Kaplan-Meier curve with stratification by 'group'
+
+```{r}
+survfit_object <- survfit(surv_object ~ group, data = echocardiogram2_data)
+```
+
+##### Display the strata using summary()
+
+```{r}
+summary(survfit_object)
+```
+
+##### Plot the strata using ggsurvplot()
+
+```{r}
+ggsurvplot(survfit_object, data = echocardiogram2_data,
+           title = "Kaplan-Meier Survival Curve (Stratified by Group)",
+           xlab = "Time", ylab = "Survival Probability",
+           pval = TRUE, conf.int = TRUE, risk.table = TRUE,
+           xlim = c(0, 200), ylim = c(0, 1),
+           risk.table.title = "Number at Risk",
+           risk.table.col = "strata",
+           risk.table.fontsize = 4,
+           ggtheme = theme_minimal()
+)
+```
+
+##### Plot the overall survival, stratified by 'group'
+
+```{r}
+ggsurvplot(survfit_object, data = echocardiogram2_data, 
+           title = "Kaplan-Meier Survival Curve (Overall)",
+           xlab = "Time", ylab = "Survival Probability",
+           pval = TRUE, conf.int = TRUE, risk.table = TRUE,
+           xlim = c(0, 200), ylim = c(0, 1),
+           risk.table.title = "Number at Risk",
+           risk.table.col = "strata",
+           risk.table.fontsize = 4,
+           ggtheme = theme_minimal()
+)
+
+```
+
+
+## Perform Log-Rank Analysis
+
+
+
+
+
+
+
+##### Assuming we have 'surv_object' and 'echocardiogram2_data' correctly defined
+
+
+##### Ensure 'surv_object' is correctly defined
+```{r}
+surv_object <- Surv(time = echocardiogram2_data$survival, event = echocardiogram2_data$alive)
+```
+
+##### Fit Kaplan-Meier survival curves
+
+```{r}
+survfit_object <- survfit(surv_object ~ group, data = echocardiogram2_data)
+```
+
+##### Perform log-rank test
+
+```{r}
+log_rank_test <- survdiff(surv_object ~ group, data = echocardiogram2_data)
+print(log_rank_test)
+```
+
+##### Plot Kaplan-Meier curve with log-rank test
+
+```{r}
+ggsurvplot(survfit_object, data = echocardiogram2_data,
+           title = "Kaplan-Meier Survival Curve with Log-Rank Test",
+           pval = TRUE,              # Display p-value for survival curves
+           conf.int = TRUE,          # Display confidence intervals
+           risk.table = TRUE,        # Display risk table
+           xlim = c(0, 200),         # Set x-axis limits
+           ylim = c(0, 1),           # Set y-axis limits
+           risk.table.title = "Number at Risk",
+           risk.table.col = "strata",
+           risk.table.fontsize = 4,
+           ggtheme = theme_minimal(),  # Use a minimal theme, adjust as needed
+           surv.median.line = "hv",   # Add median survival line
+           pval.method = TRUE,         # Use log-rank test for p-value
+           pval.size = 4               # Adjust p-value font size
+)
+```
+
+##### Plot Kaplan-Meier curve without median line
+
+```{r}
+ggsurvplot(survfit_object, data = echocardiogram2_data,
+           title = "Kaplan-Meier Survival Curve with Log-Rank Test",
+           pval = TRUE,              
+           conf.int = TRUE,          
+           risk.table = TRUE,        
+           xlim = c(0, 200),         
+           ylim = c(0, 1),           
+           risk.table.title = "Number at Risk",
+           risk.table.col = "strata",
+           risk.table.fontsize = 4,
+           ggtheme = theme_minimal(),  
+           pval.method = TRUE,         
+           pval.size = 4               
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
